@@ -24,23 +24,22 @@
 - [x] 欧加真 MT6989 通用OKI内核（基于一加Ace5竞速版 6.1.115 官方内核源码，其他同内核版本非MT6989机型可自行测试，部分机型可完全兼容）
 - [x] 欧加真 MT6897 通用OKI内核（基于一加平板 6.1.128 官方内核源码，其他同内核版本非MT6897机型可自行测试，部分机型可完全兼容）
 - [x] ReSukiSU/SukiSU Ultra/KernelSU Next/原版KernelSU多版本KSU可选
-- [x] 引入ccache缓存及大量独家编译流程优化，首次编译时间约11min，二次编译时间可稳定在约6min *(首次编译时会拉取公共预置ccache，从第二次开始配置不变的情况下，单次编译时间约6min(由于ccache缓存机制，更改任意内核编译选项会使二次编译速度下降至约11分钟，若使用创建缓存时相同的配置可恢复至约6分钟，如需要长期修改配置选项建议开启“更新ccache缓存”选项)；距离上一次调用两周未调用后缓存会被自动清除，此时编译会自动重建缓存)*
+- [x] 引入独家设计的 [ccache-ECS](https://github.com/cctv18/ccache-ECS) 缓存及大量编译流程优化，编译时间可稳定在约6min *(首次编译时会拉取公共预置ccache，从第二次开始没有大量配置改动的情况下，单次编译时间约6min；距离上一次调用两周未调用后缓存会被自动清除，此时编译会自动重建缓存)*
 - [x] 引入O2编译优化，改善内核运行性能
 - [x] ~~可选manual/kprobes/syscall钩子模式(kprobes钩子模式下支持切换至sus su模式)~~ 由于最新版KSU已更新inline hook，故旧版manual/syscall钩子已作废
 - [x] lz4 1.10.0 & zstd 1.5.7 算法更新&优化补丁(来自[@ferstar](https://github.com/ferstar), 移植by [@Xiaomichael](https://github.com/Xiaomichael))
 - [x] 可选加入 BBR/Brutal 及一系列 tcp 拥塞控制算法
 - [x] 三星SSG IO调度器移植（目前已知仅在一加12上会导致无法正常启动，原因尚不明确，待进一步研究修复）
 - [x] 加入一些网络功能拓展配置选项（用于为ipset及需要iptables等高级网络功能内核支持的程序提供支持）
+- [x] Droidspaces 容器化支持（比传统 Docker/LXC 更轻量化，便于移植的完整 Linux 环境容器实现）
 - [x] 添加了对[Mountify](https://github.com/backslashxx/mountify)模块的支持
 - [x] 加入Re:Kernel支持，与Freezer，NoActive等软件配合降低功耗
 - [x] 加入内核防格基带保护(By [@showdo](https://github.com/showdo))，有效防止恶意格机脚本/程序对系统分区数据的破坏
 ## 待实现：
-- [ ] 为非官方支持机型移植完整风驰内核支持（正在补全中）
 - [ ] zram内置化，无需外置zram.ko挂载 ~~（有了新版 lz4&zstd 补丁真的还有必要吗）~~
-- [ ] LXC/Docker 功能支持
-- [ ] Nethunter 驱动移植
+- [ ] Nethunter 网卡监听模式支持
+- [ ] kexec 内核热切换支持
 - [ ] 欧加真 6.1 通用 GKI内核（移植一加f2fs源码，实现免清data刷入）
-- ~~整合多版本内核编译脚本（出于操作便捷性及GitHub Action的选项数量限制，暂不进行多脚本整合）~~
 - 更多优化与特性移植……
 ##### 
 ##### 

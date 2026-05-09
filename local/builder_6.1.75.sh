@@ -25,6 +25,8 @@ read -p "是否启用网络功能增强优化配置？(y/n，默认：y): " APPL
 APPLY_BETTERNET=${APPLY_BETTERNET:-y}
 read -p "是否添加 BBR 等一系列拥塞控制算法？(y添加/n禁用/d默认，默认：n): " APPLY_BBR
 APPLY_BBR=${APPLY_BBR:-n}
+read -p "是否添加 Droidspaces 容器支持？(n禁用/s标准/e扩展，默认：n): " APPLY_DROIDSPACES
+APPLY_DROIDSPACES=${APPLY_DROIDSPACES:-n}
 read -p "是否启用三星SSG IO调度器？(y/n，默认：y): " APPLY_SSG
 APPLY_SSG=${APPLY_SSG:-y}
 read -p "是否启用Re-Kernel？(y/n，默认：n): " APPLY_REKERNEL
@@ -63,6 +65,7 @@ echo "应用 lz4&zstd 补丁: $APPLY_LZ4"
 echo "应用 lz4kd 补丁: $APPLY_LZ4KD"
 echo "应用网络功能增强优化配置: $APPLY_BETTERNET"
 echo "应用 BBR 等算法: $APPLY_BBR"
+echo "应用 Droidspaces 容器支持: $APPLY_DROIDSPACES"
 echo "启用三星SSG IO调度器: $APPLY_SSG"
 echo "启用Re-Kernel: $APPLY_REKERNEL"
 echo "启用内核级基带保护: $APPLY_BBG"
@@ -349,6 +352,49 @@ if [[ "$APPLY_BBR" == "y" || "$APPLY_BBR" == "Y" || "$APPLY_BBR" == "d" || "$APP
   fi
 fi
 
+# ===== 启用 Droidspaces 容器支持 =====
+if [[ "$APPLY_DROIDSPACES" == [sSeE] ]]; then
+  echo ">>> 正在添加 Droidspaces 容器支持..."
+  # 开启 Droidspaces 容器所需内核支持
+  echo "CONFIG_PID_NS=y" >> "$DEFCONFIG_FILE"
+  echo "CONFIG_IPC_NS=y" >> "$DEFCONFIG_FILE"
+  echo "CONFIG_SYSVIPC=y" >> "$DEFCONFIG_FILE"
+  echo "CONFIG_DEVTMPFS=y" >> "$DEFCONFIG_FILE"
+  echo "CONFIG_NAMESPACES=y" >> "$DEFCONFIG_FILE"
+  echo "CONFIG_POSIX_MQUEUE=y" >> "$DEFCONFIG_FILE"
+  echo "CONFIG_NETFILTER_XT_MATCH_ADDRTYPE=y" >> "$DEFCONFIG_FILE"
+  echo "CONFIG_NETFILTER_XT_TARGET_LOG=y" >> "$DEFCONFIG_FILE"
+  echo "CONFIG_NETFILTER_XT_MATCH_RECENT=y" >> "$DEFCONFIG_FILE"
+  # 开启 NTSync
+  echo "CONFIG_NTSYNC=y" >> "$DEFCONFIG_FILE"
+  cd common
+  # 应用 Droidspaces 容器必须补丁
+  wget https://github.com/cctv18/oppo_oplus_realme_sm8650/raw/refs/heads/main/droidspaces_patch/fix_sysvipc_kabi_6_7_8.patch
+  patch -p1 -F 3 < fix_sysvipc_kabi_6_7_8.patch || true
+  # 修补 oplus_bsp_midas 行为，避免开机崩溃
+  wget https://github.com/cctv18/oppo_oplus_realme_sm8650/raw/refs/heads/main/droidspaces_patch/fix_oplus_bsp_midas.patch
+  patch -p1 -F 3 < fix_oplus_bsp_midas.patch || true
+  # 应用 NTSync 补丁
+  wget https://github.com/cctv18/oppo_oplus_realme_sm8650/raw/refs/heads/main/droidspaces_patch/ntsync_base.patch
+  wget https://github.com/cctv18/oppo_oplus_realme_sm8650/raw/refs/heads/main/droidspaces_patch/ntsync_compat_android14-6.1.patch
+  patch -p1 -F 3 < ntsync_base.patch || true
+  patch -p1 -F 3 < ntsync_compat_android14-6.1.patch || true
+  cd ..
+  if [[ "$APPLY_DROIDSPACES" == [eE] ]]; then
+    echo "正在启用容器环境扩展支持..."
+    # 开启虚拟 HCI 设备支持
+    echo "CONFIG_BT_HCIVHCI=y" >> "$DEFCONFIG_FILE"
+    # 开启 systemd-coredump 支持
+    echo "CONFIG_STATIC_USERMODEHELPER=n" >> "$DEFCONFIG_FILE"
+    # 添加 Lindroid EVDI DRM 驱动
+    echo "CONFIG_DRM_LINDROID_EVDI=y" >> "$DEFCONFIG_FILE"
+    cd common
+    wget https://github.com/cctv18/oppo_oplus_realme_sm8650/raw/refs/heads/main/droidspaces_patch/evdi_drm.patch
+    patch -p1 -F 3 < evdi_drm.patch || true
+    cd ..
+  fi
+fi
+
 # ===== 启用三星SSG IO调度器 =====
 if [[ "$APPLY_SSG" == "y" || "$APPLY_SSG" == "Y" ]]; then
   echo ">>> 正在启用三星SSG IO调度器..."
@@ -447,6 +493,9 @@ if [[ "$USE_PATCH_LINUX" == [bBkK] ]]; then
 fi
 if [[ "$APPLY_BBR" == "y" || "$APPLY_BBR" == "Y" ]]; then
   ZIP_NAME="${ZIP_NAME}-bbr"
+fi
+if [[ "$APPLY_DROIDSPACES" == [sSeE] ]]; then
+  ZIP_NAME="${ZIP_NAME}-dss"
 fi
 if [[ "$APPLY_SSG" == "y" || "$APPLY_SSG" == "Y" ]]; then
   ZIP_NAME="${ZIP_NAME}-ssg"
